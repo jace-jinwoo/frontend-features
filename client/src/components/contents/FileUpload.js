@@ -1,6 +1,8 @@
 import { PlusOutlined } from '@ant-design/icons';
 import { Modal, Upload } from 'antd';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from "axios";
+
 const getBase64 = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -52,6 +54,7 @@ const FileUpload = () => {
       status: 'error',
     },
   ]);
+
   const handleCancel = () => setPreviewOpen(false);
   const handlePreview = async (file) => {
     if (!file.url && !file.preview) {
@@ -61,7 +64,28 @@ const FileUpload = () => {
     setPreviewOpen(true);
     setPreviewTitle(file.name || file.url.substring(file.url.lastIndexOf('/') + 1));
   };
-  const handleChange = ({ fileList: newFileList }) => setFileList(newFileList);
+  const handleChange = (obj) => {
+    // console.log('obj :: ', obj, typeof obj);
+    // setFileList(newFileList);
+  };
+  const callApi = async (req) => {
+    // status: uploading
+    let formData = new FormData();    
+    formData.append("file", req.file);
+    const res = await axios.post('/api/imgs/fileUpload', formData);
+    if (res.status === 200) {
+      // status: done
+      console.log("res :: ", res)
+      // setFileList({ ...fileList, newFile});
+    } 
+    else {
+      // status: error
+      throw new Error({
+        status: res.status,
+        statusText: res.statusText
+      });
+    }
+  }
   const uploadButton = (
     <div>
       <PlusOutlined />
@@ -71,7 +95,8 @@ const FileUpload = () => {
   return (
     <>
       <Upload
-        action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+        // action="http://localhost:3000/api/imgs/fileUpload"
+        customRequest={callApi}
         listType="picture-card"
         fileList={fileList}
         onPreview={handlePreview}
