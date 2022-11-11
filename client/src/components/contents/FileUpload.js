@@ -17,42 +17,30 @@ const FileUpload = () => {
   const [previewImage, setPreviewImage] = useState('');
   const [previewTitle, setPreviewTitle] = useState('');
   const [fileList, setFileList] = useState([
-    {
-      uid: '-1',
-      name: 'image.png',
-      status: 'done',
-      url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-    },
-    {
-      uid: '-2',
-      name: 'image.png',
-      status: 'done',
-      url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-    },
-    {
-      uid: '-3',
-      name: 'image.png',
-      status: 'done',
-      url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-    },
-    {
-      uid: '-4',
-      name: 'image.png',
-      status: 'done',
-      url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-    },
-    {
-      uid: '-xxx',
-      percent: 50,
-      name: 'image.png',
-      status: 'uploading',
-      url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-    },
-    {
-      uid: '-5',
-      name: 'image.png',
-      status: 'error',
-    },
+    // {
+    //   uid: '-1',
+    //   name: 'image.png',
+    //   status: 'done',
+    //   url: 'http://localhost:5000/my-uploads/yasuo.jpg',
+    // },
+    // {
+    //   uid: '-2',
+    //   name: 'image.png',
+    //   status: 'done',
+    //   url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+    // },    
+    // {
+    //   uid: '-xxx',
+    //   percent: 50,
+    //   name: 'image.png',
+    //   status: 'uploading',
+    //   url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+    // },
+    // {
+    //   uid: '-5',
+    //   name: 'image.png',
+    //   status: 'error',
+    // },
   ]);
 
   const handleCancel = () => setPreviewOpen(false);
@@ -65,27 +53,69 @@ const FileUpload = () => {
     setPreviewTitle(file.name || file.url.substring(file.url.lastIndexOf('/') + 1));
   };
   const handleChange = (obj) => {
-    // console.log('obj :: ', obj, typeof obj);
+    console.log('obj :: ', obj, typeof obj);
     // setFileList(newFileList);
   };
-  const callApi = async (req) => {
+  useEffect(() => {
+    callGetImageApi();
+  }, [])
+
+  const callGetImageApi = async () => {
+    await axios.get('/my-uploads').then( res => {
+      console.log("all image req :: ", res);
+
+      if (res.status === 200) {
+        const result = res.data?.map( i => {
+
+          const cookedPath = i.path.split('/');
+          const imageName = cookedPath[cookedPath.length - 1];
+
+          console.log("cookedPath :: ", cookedPath);
+          console.log("imageName :: ", imageName);
+
+          return {
+            name: imageName,
+            status: 'done',
+            url: `http://localhost:5000${i.path}`,
+          }
+        })
+        console.log("result :: ", result)
+        setFileList([...fileList, ...result]);
+      }
+
+    });
+  }
+
+  const callUploadApi = async (req) => {
     // status: uploading
     let formData = new FormData();    
     formData.append("file", req.file);
-    const res = await axios.post('/api/imgs/fileUpload', formData);
-    if (res.status === 200) {
-      // status: done
+    await axios.post('/upload', formData).then( res => {
       console.log("res :: ", res)
-      // setFileList({ ...fileList, newFile});
-    } 
-    else {
-      // status: error
-      throw new Error({
-        status: res.status,
-        statusText: res.statusText
-      });
-    }
+      if (res.status === 200) {
+        const data = res.data;
+        // status: done
+        // callGetImageApi(res)
+        setFileList([ ...fileList, {
+          name: data.originalname,
+          status: 'done',
+          url: `http://localhost:5000/${data.destination}/${data.originalname}`,
+        }]);
+      } 
+      else {
+        // status: error
+        setFileList([ ...fileList, {
+          name: 'image.png',
+          status: 'error',
+        }]);
+        throw new Error({
+          status: res.status,
+          statusText: res.statusText
+        });
+      }
+    });
   }
+
   const uploadButton = (
     <div>
       <PlusOutlined />
@@ -95,8 +125,8 @@ const FileUpload = () => {
   return (
     <>
       <Upload
-        // action="http://localhost:3000/api/imgs/fileUpload"
-        customRequest={callApi}
+        // action="http://localhost:3000/upload"
+        customRequest={callUploadApi}
         listType="picture-card"
         fileList={fileList}
         onPreview={handlePreview}
