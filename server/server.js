@@ -3,7 +3,9 @@ const app = express();
 const port = 5000;
 const multer = require("multer");
 const fs = require("fs");
+const generateToken = require("./jwt/jwt");
 
+// File Upload
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       cb(null, './my-uploads')
@@ -13,6 +15,18 @@ const storage = multer.diskStorage({
     }
 })
 const upload = multer({storage});
+
+app.use(express.json());
+app.use(express.urlencoded( {extended : false } ));
+
+app.post("/login", (req, res) => {    
+    if (req.body.username === 'admin' && req.body.password === "admin") {
+        res.send({
+            status: 200,
+            message: "Login Success!"
+        });
+    }
+})
 
 app.get("/my-uploads", (req, res) => {
     console.log("req.url :: ", req.url)
@@ -50,6 +64,19 @@ app.post("/upload", upload.single('file'), (req, res) => {
     console.log("upload req.file :: ", req.file);
     res.send(req.file)
 })
+
+
+const payload = {
+    id: "id",
+    profile: "profile"
+}
+app.post("/login", (req, res) => {
+    console.log("upload req.file :: ", req.file);
+    res.send(req.file)
+})
+
+generateToken(payload)
+
 
 app.listen(port, () => {
     console.log(`App listening on port ${port}`);

@@ -7,6 +7,6 @@ const options = {
 
 module.exports = function (app) {
     app.use(
-        createProxyMiddleware(["/my-uploads", "/upload"], options)
+        createProxyMiddleware(["/login", "/my-uploads", "/upload"], options)
     )
 }
